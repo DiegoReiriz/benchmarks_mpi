@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
         int nbytes = 0;
 
         if(world_rank == 0)
-            printf("       #bytes #repetitions      t[usec]   Mbytes/sec\n");
+            printf("       #bytes #repetitions      t[usec]   MBytes/sec\n");
 
         while(nbytes <= OVERALL_VOL){
 
@@ -48,6 +48,7 @@ int main(int argc, char** argv) {
             int count = 0;
             int i = 0;
 
+            //o n barrier debería aplicarse solo sobrea primeira barrera e as iteracions que se fan para quentar son as de WARMUP
             for (i=0; i<N_BARR+N_WARMUP; i++ ){
                 count =0;
                 byte buffer[nbytes];
