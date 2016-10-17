@@ -1,29 +1,94 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <openmpi/mpi.h>
 
+#ifdef HAS_IMB_SETTINGS_H
+    #include <imbsettings.h>
+#else
+    #define MSGSPERSAMPLE 1000
+    #define OVERALL_VOL 4*1048576
+    #define N_BARR 2
+    #define N_WARMUP 2
+#endif
+
+#define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+
+#define min(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a < _b ? _a : _b; })
+
+typedef unsigned char byte;
 
 int main(int argc, char** argv) {
     // Initialize the MPI environment
     MPI_Init(NULL, NULL);
 
-    // Get the number of processes
+    // Find out rank, size
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-    // Get the rank of the process
-    int world_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    double time = MPI_Wtime();
 
-    // Get the name of the processor
-    char processor_name[MPI_MAX_PROCESSOR_NAME];
-    int name_len;
-    MPI_Get_processor_name(processor_name, &name_len);
+    if(world_size > 1){
+        int nbytes = 0;
 
-    // Print off a hello world message
-    printf("Hello world from processor %s, rank %d"
-                   " out of %d processors\n",
-           processor_name, world_rank, world_size);
+        if(world_rank == 0)
+            printf("       #bytes #repetitions      t[usec]   Mbytes/sec\n");
 
+        while(nbytes <= OVERALL_VOL){
+
+            int n_sample = nbytes == 0? MSGSPERSAMPLE : max(1,min(MSGSPERSAMPLE,OVERALL_VOL/nbytes*10));
+
+            int count = 0;
+            int i = 0;
+
+            for (i=0; i<N_BARR+N_WARMUP; i++ ){
+                count =0;
+                byte buffer[nbytes];
+
+                MPI_Barrier(MPI_COMM_WORLD);
+                time = MPI_Wtime();
+
+
+                while (count < n_sample) {
+                    if (world_rank == 0) {
+    //                    printf("ARRANCANDO %d\n",world_rank);
+                        MPI_Send(&buffer, nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
+                        MPI_Recv(&buffer, nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    } else if(world_rank == 1) {
+    //                    printf("ARRANCANDO %d\n",world_rank);
+                        MPI_Recv(&buffer, nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                        MPI_Send(&buffer, nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
+                    }
+                    count++;
+                }
+
+
+                MPI_Barrier(MPI_COMM_WORLD);
+
+                if(world_rank == 0)
+                    time = (MPI_Wtime()-time)/n_sample/2;// entre 2 porque ping pong é especial
+
+            }
+
+            if(world_rank == 0){
+                //time = (MPI_Wtime()-time)/n_sample;
+                double bandwith=nbytes/time/1024/1024;
+                printf("\t%d\t%d\t%.20f\t%.20f\n",nbytes,n_sample,time*1000000,bandwith);
+            }
+
+            nbytes = nbytes == 0 ? 1 : nbytes * 2 ;
+
+        }
+    }else{
+        printf("Non existen nodos suficienetes\n");
+    }
     // Finalize the MPI environment.
     MPI_Finalize();
 }
