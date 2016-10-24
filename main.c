@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
                 time = MPI_Wtime();
 
 
-                while (count < n_sample) {
+                for (count = 0;count < n_sample;count++) {
                     if (world_rank == 0) {
     //                    printf("ARRANCANDO %d\n",world_rank);
                         MPI_Send(&buffer, nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
                 //for(j=0;j < N_BARR;j++)
                     MPI_Barrier(MPI_COMM_WORLD);
 
-                if(world_rank == 0)
+                //if(world_rank == 0)
                     time = (MPI_Wtime()-time)/n_sample/2;// entre 2 porque ping pong é especial
 
             }
