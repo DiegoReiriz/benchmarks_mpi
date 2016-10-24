@@ -49,11 +49,14 @@ int main(int argc, char** argv) {
             int i = 0;
 
             //o n barrier debería aplicarse solo sobrea primeira barrera e as iteracions que se fan para quentar son as de WARMUP
-            for (i=0; i<N_BARR+N_WARMUP; i++ ){
+            for (i=0; i<N_WARMUP; i++ ){
                 count =0;
                 byte buffer[nbytes];
 
-                MPI_Barrier(MPI_COMM_WORLD);
+                int j;
+                for(j=0;j < N_BARR;j++)
+                    MPI_Barrier(MPI_COMM_WORLD);
+
                 time = MPI_Wtime();
 
 
@@ -71,7 +74,8 @@ int main(int argc, char** argv) {
                 }
 
 
-                MPI_Barrier(MPI_COMM_WORLD);
+                for(j=0;j < N_BARR;j++)
+                    MPI_Barrier(MPI_COMM_WORLD);
 
                 if(world_rank == 0)
                     time = (MPI_Wtime()-time)/n_sample/2;// entre 2 porque ping pong é especial
