@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
         int nbytes = 0;
 
         if(world_rank == 0)
-            printf("       #bytes #repetitions      t[usec]   MBytes/sec\n");
+            printf("\t#bytes\t#repetitions\tt[usec]\t\tMBytes/sec\n");
 
         while(nbytes <= OVERALL_VOL){
 
@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
             if(world_rank == 0){
                 //time = (MPI_Wtime()-time)/n_sample;
                 double bandwith=nbytes/time/1024/1024;
-                printf("\t%d\t%d\t%.20f\t%.20f\n",nbytes,n_sample,time*1000000,bandwith);
+                printf("\t%d\t%d\t%.20f\t\t%.20f\n",nbytes,n_sample,time*1000000,bandwith);
             }
 
             nbytes = nbytes == 0 ? 1 : nbytes * 2 ;
