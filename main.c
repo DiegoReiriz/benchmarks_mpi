@@ -26,15 +26,16 @@ int main(int argc, char** argv) {
     // Initialize the MPI environment
     MPI_Init(NULL, NULL);
 
-    double min_time_global;
-    double max_time_global;
-    double time_global;
 
     // Find out rank, size
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    double min_time_global;
+    double max_time_global;
+    double time_global;
 
     double time = MPI_Wtime();
     double min_time = -1;
@@ -62,19 +63,19 @@ int main(int argc, char** argv) {
 
             for (i=0; i<N_WARMUP; i++ ){
                 count =0;
-                byte sendBuffer[nbytes];
-                byte recvBuffer[nbytes];
+                byte* sendBuffer = malloc(sizeof(byte) * nbytes);
+                byte* recvBuffer = malloc(sizeof(byte) * nbytes);
 
                 /*This loop has no sense*/
                 /*int j;
                 for(j=0;j < N_BARR;j++)*/
-                    MPI_Barrier(MPI_COMM_WORLD);
+                MPI_Barrier(MPI_COMM_WORLD);
 
                 time = MPI_Wtime();
 
                 while (count < n_sample) {
                     MPI_Sendrecv(sendBuffer, nbytes, MPI_BYTE, (world_rank+1)%world_size, 0,
-                                 recvBuffer, nbytes, MPI_BYTE, world_rank-1, 0,
+                                 recvBuffer, nbytes, MPI_BYTE, (world_rank-1)%world_size, 0,
                                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 //                    Input Parameters
@@ -98,7 +99,12 @@ int main(int argc, char** argv) {
                 /*This loop has no sense*/
                 //for(j=0;j < N_BARR;j++)
                 MPI_Barrier(MPI_COMM_WORLD);
+
+                //obtención de los tiempos locales
                 time = (MPI_Wtime()-time)/n_sample;
+
+                free(sendBuffer);
+                free(recvBuffer);
 
                 if(min_time < 0 || time < min_time)//sin inicializar
                     min_time = time;
@@ -107,6 +113,7 @@ int main(int argc, char** argv) {
                     max_time = time;
 
 
+                //sumamos el tiempo de todas las mediciones locales en una medición global y lo dividimos entre el número de muestras
                 MPI_Reduce(&time, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
                            MPI_COMM_WORLD);
                 time_global/=world_size;
