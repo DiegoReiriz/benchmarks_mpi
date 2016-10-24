@@ -53,8 +53,9 @@ int main(int argc, char** argv) {
                 count =0;
                 byte buffer[nbytes];
 
-                int j;
-                for(j=0;j < N_BARR;j++)
+                /*This loop has no sense*/
+                /*int j;
+                for(j=0;j < N_BARR;j++)*/
                     MPI_Barrier(MPI_COMM_WORLD);
 
                 time = MPI_Wtime();
@@ -74,7 +75,8 @@ int main(int argc, char** argv) {
                 }
 
 
-                for(j=0;j < N_BARR;j++)
+                /*This loop has no sense*/
+                //for(j=0;j < N_BARR;j++)
                     MPI_Barrier(MPI_COMM_WORLD);
 
                 if(world_rank == 0)
