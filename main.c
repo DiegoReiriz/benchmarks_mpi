@@ -7,7 +7,6 @@
 #else
     #define MSGSPERSAMPLE 1000
     #define OVERALL_VOL 4*1048576
-    #define N_BARR 2
     #define N_WARMUP 2
 #endif
 
@@ -27,6 +26,10 @@ int main(int argc, char** argv) {
     // Initialize the MPI environment
     MPI_Init(NULL, NULL);
 
+    double min_time_global;
+    double max_time_global;
+    double time_global;
+
     // Find out rank, size
     int world_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
@@ -34,12 +37,20 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
     double time = MPI_Wtime();
+    double min_time = -1;
+    double max_time = -1;
 
     if(world_size > 1){
         int nbytes = 0;
 
-        if(world_rank == 0)
-            printf("\t#bytes\t#repetitions\tt[usec]\t\tMBytes/sec\n");
+        if(world_rank == 0){
+            printf("#----------------------------------------------\n");
+            printf("# BENCHMARK: SendRecv\n");
+            printf("# #processes %d \n",world_size);
+            printf("#----------------------------------------------\n");
+            printf("\t#bytes\t#repetitions\ttmin[usec]\t\ttmax[usec]\t\ttavg[usec]\t\tMBytes/sec\n");
+
+        }
 
         while(nbytes <= OVERALL_VOL){
 
@@ -48,10 +59,11 @@ int main(int argc, char** argv) {
             int count = 0;
             int i = 0;
 
-            //o n barrier debería aplicarse solo sobrea primeira barrera e as iteracions que se fan para quentar son as de WARMUP
+
             for (i=0; i<N_WARMUP; i++ ){
                 count =0;
-                byte buffer[nbytes];
+                byte sendBuffer[nbytes];
+                byte recvBuffer[nbytes];
 
                 /*This loop has no sense*/
                 /*int j;
@@ -60,34 +72,60 @@ int main(int argc, char** argv) {
 
                 time = MPI_Wtime();
 
-
                 while (count < n_sample) {
-                    if (world_rank == 0) {
-    //                    printf("ARRANCANDO %d\n",world_rank);
-                        MPI_Send(&buffer, nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
-                        MPI_Recv(&buffer, nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                    } else if(world_rank == 1) {
-    //                    printf("ARRANCANDO %d\n",world_rank);
-                        MPI_Recv(&buffer, nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                        MPI_Send(&buffer, nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
-                    }
+                    MPI_Sendrecv(sendBuffer, nbytes, MPI_BYTE, (world_rank+1)%world_size, 0,
+                                 recvBuffer, nbytes, MPI_BYTE, world_rank-1, 0,
+                                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+//                    Input Parameters
+//                    ================
+//                    sendbuf - initial address of send sendBuffer (choice)
+//                    sendcount - number of elements in send sendBuffer (integer)
+//                    sendtype - type of elements in send sendBuffer (handle)
+//                    dest - rank of destination (integer)
+//                    sendtag - send tag (integer)
+//                    recvcount - number of elements in receive sendBuffer (integer)
+//                    recvtype -  type of elements in receive sendBuffer (handle)
+//                    source - rank of source (integer)
+//                    recvtag - receive tag (integer)
+//                    comm - communicator (handle)
+//                    status -
+//
                     count++;
                 }
 
 
                 /*This loop has no sense*/
                 //for(j=0;j < N_BARR;j++)
-                    MPI_Barrier(MPI_COMM_WORLD);
+                MPI_Barrier(MPI_COMM_WORLD);
+                time = (MPI_Wtime()-time)/n_sample;
 
-                if(world_rank == 0)
-                    time = (MPI_Wtime()-time)/n_sample/2;// entre 2 porque ping pong é especial
+                if(min_time < 0 || time < min_time)//sin inicializar
+                    min_time = time;
+
+                if(max_time < 0 || time < max_time)//sin inicializar
+                    max_time = time;
+
+
+                MPI_Reduce(&time, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
+                           MPI_COMM_WORLD);
+                time_global/=world_size;
+
+                MPI_Reduce(&time, &min_time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
+                           MPI_COMM_WORLD);
+                min_time_global/=world_size;
+
+                MPI_Reduce(&time, &max_time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
+                           MPI_COMM_WORLD);
+                max_time_global/=world_size;
+
 
             }
 
             if(world_rank == 0){
                 //time = (MPI_Wtime()-time)/n_sample;
                 double bandwith=nbytes/time/1024/1024;
-                printf("\t%d\t%d\t%.20f\t\t%.20f\n",nbytes,n_sample,time*1000000,bandwith);
+                printf("\t%d\t%d\t\t%.10f\t\t%.10f\t\t%.10f\t\t%.10f\n",nbytes,n_sample,min_time_global*1000000,max_time_global*1000000,time_global*1000000,bandwith);
             }
 
             nbytes = nbytes == 0 ? 1 : nbytes * 2 ;
