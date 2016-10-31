@@ -48,7 +48,6 @@ int main(int argc, char** argv) {
             printf("#----------------------------------------------\n");
             printf("# BENCHMARK: SendRecv\n");
             printf("# #processes %d \n",world_size);
-            printf("# #OVERALL_VOL %d \n",OVERALL_VOL);
             printf("#----------------------------------------------\n");
             printf("\t#bytes\t#repetitions\ttmin[usec]\t\ttmax[usec]\t\ttavg[usec]\t\tMBytes/sec\n");
 
