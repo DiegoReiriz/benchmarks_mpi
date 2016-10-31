@@ -62,10 +62,6 @@ int main(int argc, char** argv) {
 
             for (i=0; i<N_WARMUP; i++ ){
 
-                min_time = -1;
-                max_time = -1;
-                time=-1;
-
                 void* sendBuffer = malloc(sizeof(MPI_BYTE) * nbytes);
                 void* recvBuffer = malloc(sizeof(MPI_BYTE) * nbytes);
 
@@ -74,14 +70,14 @@ int main(int argc, char** argv) {
                 for(j=0;j < N_BARR;j++)*/
                 MPI_Barrier(MPI_COMM_WORLD);
 
-                int origen = (world_rank+1)%world_size;
-                int destino = (world_rank+world_size-1)%world_size;
+                int nodoSuperior = (world_rank+1)%world_size;
+                int nodoInferior = (world_rank+world_size-1)%world_size;
 
                 time = MPI_Wtime();
 
                 for (count=0;count < n_sample;count++) {
-                    MPI_Sendrecv(sendBuffer, nbytes, MPI_BYTE, origen, 0,
-                                 recvBuffer, nbytes, MPI_BYTE, destino, 0,
+                    MPI_Sendrecv(sendBuffer, nbytes, MPI_BYTE, nodoSuperior, 0,
+                                 recvBuffer, nbytes, MPI_BYTE, nodoInferior, 0,
                                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 //                    Input Parameters
@@ -101,43 +97,35 @@ int main(int argc, char** argv) {
 //
                 }
 
-
+                time = (MPI_Wtime()-time)/n_sample;
                 /*This loop has no sense*/
                 //for(j=0;j < N_BARR;j++)
-                MPI_Barrier(MPI_COMM_WORLD);
+//                MPI_Barrier(MPI_COMM_WORLD);
 
                 //obtención de los tiempos locales
-                time = (MPI_Wtime()-time)/n_sample;
+
 
                 free(sendBuffer);
                 free(recvBuffer);
 
-                if(min_time < 0 || time < min_time)//sin inicializar
-                    min_time = time;
-
-                if(max_time < 0 || time > max_time)//sin inicializar
-                    max_time = time;
-
-
                 //sumamos el tiempo de todas las mediciones locales en una medición global y lo dividimos entre el número de muestras
-//                MPI_Reduce(&time, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
-//                           MPI_COMM_WORLD);
-//
-//                MPI_Reduce(&min_time, &min_time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
-//                           MPI_COMM_WORLD);
-//
-//                MPI_Reduce(&max_time, &max_time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
-//                           MPI_COMM_WORLD);
+                MPI_Reduce(&time, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
+                           MPI_COMM_WORLD);
+
+                MPI_Reduce(&time, &min_time_global, 1, MPI_DOUBLE, MPI_MIN, 0,
+                           MPI_COMM_WORLD);
+
+                MPI_Reduce(&time, &max_time_global, 1, MPI_DOUBLE, MPI_MAX, 0,
+                           MPI_COMM_WORLD);
 
             }
 
             if(world_rank == 0){
-//                time_global/=world_size;
-//                min_time_global/=world_size;
-//                max_time_global/=world_size;
+                time_global/=world_size;
+
                 //time = (MPI_Wtime()-time)/n_sample;
-                double bandwith=nbytes/time/1024/1024;
-                printf("\t%d\t%d\t\t%.10f\t\t%.10f\t\t%.10f\t\t%.10f\n",nbytes,n_sample,min_time*1000000,max_time*1000000,time*1000000,bandwith);
+                double bandwith=nbytes/time_global/1024/1024;
+                printf("\t%d\t%d\t\t%.10f\t\t%.10f\t\t%.10f\t\t%.10f\n",nbytes,n_sample,min_time_global*1000000,max_time_global*1000000,time_global*1000000,bandwith);
             }
 
             nbytes = nbytes == 0 ? 1 : nbytes * 2 ;
