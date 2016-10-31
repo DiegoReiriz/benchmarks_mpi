@@ -48,6 +48,7 @@ int main(int argc, char** argv) {
             printf("#----------------------------------------------\n");
             printf("# BENCHMARK: SendRecv\n");
             printf("# #processes %d \n",world_size);
+            printf("# #OVERALL_VOL %d \n",OVERALL_VOL);
             printf("#----------------------------------------------\n");
             printf("\t#bytes\t#repetitions\ttmin[usec]\t\ttmax[usec]\t\ttavg[usec]\t\tMBytes/sec\n");
 
@@ -56,26 +57,31 @@ int main(int argc, char** argv) {
         while(nbytes <= OVERALL_VOL){
 
             int n_sample = nbytes == 0? MSGSPERSAMPLE : max(1,min(MSGSPERSAMPLE,OVERALL_VOL/nbytes*10));
-
             int count = 0;
             int i = 0;
 
-
             for (i=0; i<N_WARMUP; i++ ){
-                count =0;
-                byte* sendBuffer = malloc(sizeof(byte) * nbytes);
-                byte* recvBuffer = malloc(sizeof(byte) * nbytes);
+
+                min_time = -1;
+                max_time = -1;
+                time=-1;
+
+                void* sendBuffer = malloc(sizeof(MPI_BYTE) * nbytes);
+                void* recvBuffer = malloc(sizeof(MPI_BYTE) * nbytes);
 
                 /*This loop has no sense*/
                 /*int j;
                 for(j=0;j < N_BARR;j++)*/
                 MPI_Barrier(MPI_COMM_WORLD);
 
+                int origen = (world_rank+1)%world_size;
+                int destino = (world_rank+world_size-1)%world_size;
+
                 time = MPI_Wtime();
 
-                while (count < n_sample) {
-                    MPI_Sendrecv(sendBuffer, nbytes, MPI_BYTE, (world_rank+1)%world_size, 0,
-                                 recvBuffer, nbytes, MPI_BYTE, (world_rank-1)%world_size, 0,
+                for (count=0;count < n_sample;count++) {
+                    MPI_Sendrecv(sendBuffer, nbytes, MPI_BYTE, origen, 0,
+                                 recvBuffer, nbytes, MPI_BYTE, destino, 0,
                                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 //                    Input Parameters
@@ -85,6 +91,7 @@ int main(int argc, char** argv) {
 //                    sendtype - type of elements in send sendBuffer (handle)
 //                    dest - rank of destination (integer)
 //                    sendtag - send tag (integer)
+//                    recvBuffer -
 //                    recvcount - number of elements in receive sendBuffer (integer)
 //                    recvtype -  type of elements in receive sendBuffer (handle)
 //                    source - rank of source (integer)
@@ -92,7 +99,6 @@ int main(int argc, char** argv) {
 //                    comm - communicator (handle)
 //                    status -
 //
-                    count++;
                 }
 
 
@@ -109,30 +115,29 @@ int main(int argc, char** argv) {
                 if(min_time < 0 || time < min_time)//sin inicializar
                     min_time = time;
 
-                if(max_time < 0 || time < max_time)//sin inicializar
+                if(max_time < 0 || time > max_time)//sin inicializar
                     max_time = time;
 
 
                 //sumamos el tiempo de todas las mediciones locales en una medición global y lo dividimos entre el número de muestras
-                MPI_Reduce(&time, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
-                           MPI_COMM_WORLD);
-                time_global/=world_size;
-
-                MPI_Reduce(&time, &min_time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
-                           MPI_COMM_WORLD);
-                min_time_global/=world_size;
-
-                MPI_Reduce(&time, &max_time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
-                           MPI_COMM_WORLD);
-                max_time_global/=world_size;
-
+//                MPI_Reduce(&time, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
+//                           MPI_COMM_WORLD);
+//
+//                MPI_Reduce(&min_time, &min_time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
+//                           MPI_COMM_WORLD);
+//
+//                MPI_Reduce(&max_time, &max_time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
+//                           MPI_COMM_WORLD);
 
             }
 
             if(world_rank == 0){
+//                time_global/=world_size;
+//                min_time_global/=world_size;
+//                max_time_global/=world_size;
                 //time = (MPI_Wtime()-time)/n_sample;
                 double bandwith=nbytes/time/1024/1024;
-                printf("\t%d\t%d\t\t%.10f\t\t%.10f\t\t%.10f\t\t%.10f\n",nbytes,n_sample,min_time_global*1000000,max_time_global*1000000,time_global*1000000,bandwith);
+                printf("\t%d\t%d\t\t%.10f\t\t%.10f\t\t%.10f\t\t%.10f\n",nbytes,n_sample,min_time*1000000,max_time*1000000,time*1000000,bandwith);
             }
 
             nbytes = nbytes == 0 ? 1 : nbytes * 2 ;
