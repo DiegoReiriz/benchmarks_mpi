@@ -57,14 +57,13 @@ int main(int argc, char** argv) {
 
                 time = MPI_Wtime();
 
-                for (count=0;count < n_sample;count++) {
-                    MPI_Bcast(buffer,nbytes,MPI_BYTE,0,MPI_COMM_WORLD);
-
-                }
+                for (count=0;count < n_sample;count++)
+                    for(int i=0; i < world_size; i++) //podríanse facer todos xuntos pero non quero saturar a rede realizando todas a vez
+                        MPI_Bcast(buffer,nbytes,MPI_BYTE,i,MPI_COMM_WORLD);
 
                 MPI_Barrier(MPI_COMM_WORLD);
 
-                time = (MPI_Wtime()-time)/n_sample;
+                time = (MPI_Wtime()-time)/n_sample/world_size;
                 free(buffer);
             }
 
