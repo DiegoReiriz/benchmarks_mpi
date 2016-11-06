@@ -51,9 +51,9 @@ int main(int argc, char** argv) {
             //o n barrier debería aplicarse solo sobrea primeira barrera e as iteracions que se fan para quentar son as de WARMUP
             for (i=0; i<N_WARMUP; i++ ){
                 count =0;
-                void* sendBuffer = malloc(sizeof(MPI_BYTE)*nbytes);
+                void* recvBuffer = malloc(sizeof(MPI_BYTE)*nbytes);
                 int reparto = nbytes/world_size;//fragmento de array que se reparte a cada proceso
-                void* recvBuffer = malloc(sizeof(MPI_BYTE)*reparto);
+                void* sendBuffer = malloc(sizeof(MPI_BYTE)*reparto);
 
                 MPI_Barrier(MPI_COMM_WORLD);
 
@@ -62,14 +62,14 @@ int main(int argc, char** argv) {
 
                 for (count = 0;count < n_sample;count++)
                     for(int i = 0; i<world_size;i++)
-                        MPI_Scatter(sendBuffer,reparto,MPI_BYTE,
-                                    recvBuffer,reparto,MPI_BYTE,i,MPI_COMM_WORLD);
+                        MPI_Gather(sendBuffer,reparto,MPI_BYTE,
+                                   recvBuffer,reparto,MPI_BYTE,i,MPI_COMM_WORLD);
 
                 MPI_Barrier(MPI_COMM_WORLD);
 
                 time = (MPI_Wtime()-time)/n_sample;
-                free(sendBuffer);
                 free(recvBuffer);
+                free(sendBuffer);
             }
 
             if(world_rank == 0){
