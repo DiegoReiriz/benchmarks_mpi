@@ -51,20 +51,22 @@ int main(int argc, char** argv) {
             //o n barrier debería aplicarse solo sobrea primeira barrera e as iteracions que se fan para quentar son as de WARMUP
             for (i=0; i<N_WARMUP; i++ ){
                 count =0;
-                void* buffer = malloc(sizeof(MPI_BYTE) * nbytes);
+                void* sendBuffer = malloc(sizeof(MPI_BYTE) * nbytes);
+                void* recvBuffer = malloc(sizeof(MPI_BYTE) * nbytes * world_size);//comprobar si o tamaño é adecuado
 
                 MPI_Barrier(MPI_COMM_WORLD);
 
                 time = MPI_Wtime();
 
                 for (count=0;count < n_sample;count++)
-                    for(int i=0; i < world_size; i++) //podríanse facer todos xuntos pero non quero saturar a rede realizando todas a vez
-                        MPI_Bcast(buffer,nbytes,MPI_BYTE,i,MPI_COMM_WORLD);
+                    MPI_Alltoall(sendBuffer,nbytes,MPI_BYTE,
+                                 recvBuffer,nbytes,MPI_BYTE,MPI_COMM_WORLD);
 
                 MPI_Barrier(MPI_COMM_WORLD);
 
-                time = (MPI_Wtime()-time)/n_sample/world_size;
-                free(buffer);
+                time = (MPI_Wtime()-time)/n_sample;
+                free(sendBuffer);
+                free(recvBuffer);
             }
 
             if(world_rank == 0){
