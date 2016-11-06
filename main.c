@@ -64,9 +64,6 @@ int main(int argc, char** argv) {
                 void* sendBuffer = malloc(sizeof(MPI_BYTE) * nbytes);
                 void* recvBuffer = malloc(sizeof(MPI_BYTE) * nbytes);
 
-                /*This loop has no sense*/
-                /*int j;
-                for(j=0;j < N_BARR;j++)*/
                 MPI_Barrier(MPI_COMM_WORLD);
 
                 int nodoSuperior = (world_rank+1)%world_size;
@@ -97,12 +94,6 @@ int main(int argc, char** argv) {
                 }
 
                 time = (MPI_Wtime()-time)/n_sample;
-                /*This loop has no sense*/
-                //for(j=0;j < N_BARR;j++)
-//                MPI_Barrier(MPI_COMM_WORLD);
-
-                //obtención de los tiempos locales
-
 
                 free(sendBuffer);
                 free(recvBuffer);
