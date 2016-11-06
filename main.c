@@ -33,54 +33,30 @@ int main(int argc, char** argv) {
     int world_size;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-    double time = MPI_Wtime();
+    double time;
 
-    if(world_size > 1){
-        int nbytes = 0;
+    int count = 0;
 
-        if(world_rank == 0)
-            printf("\t#bytes\t#repetitions\tt[usec]\t\tMBytes/sec\n");
-
-        while(nbytes <= OVERALL_VOL){
-
-            int n_sample = nbytes == 0? MSGSPERSAMPLE : max(1,min(MSGSPERSAMPLE,OVERALL_VOL/nbytes*10));
-
-            int count = 0;
-            int i = 0;
-
-            //o n barrier debería aplicarse solo sobrea primeira barrera e as iteracions que se fan para quentar son as de WARMUP
-            for (i=0; i<N_WARMUP; i++ ){
-                count =0;
-                void* buffer = malloc(sizeof(MPI_BYTE)*nbytes);
-
-                MPI_Barrier(MPI_COMM_WORLD);
-
-                time = MPI_Wtime();
+    if(world_rank == 0)
+        printf("\t#bytes\t#repetitions\tt[usec]\t\tMBytes/sec\n");
 
 
-                for (count = 0;count < n_sample;count++) {
-                    //CODE GOES HERE
+    time = MPI_Wtime();
 
-                }
 
-                MPI_Barrier(MPI_COMM_WORLD);
+    for (count = 0;count < 100000;count++) {
+        MPI_Barrier(MPI_COMM_WORLD);
 
-                time = (MPI_Wtime()-time)/n_sample;
-                free(buffer);
-            }
-
-            if(world_rank == 0){
-                //time = (MPI_Wtime()-time)/n_sample;
-                double bandwith=nbytes/time/1024/1024;
-                printf("\t%d\t%d\t%.20f\t\t%.20f\n",nbytes,n_sample,time*1000000,bandwith);
-            }
-
-            nbytes = nbytes == 0 ? 1 : nbytes * 2 ;
-
-        }
-    }else{
-        printf("Non existen nodos suficienetes\n");
     }
-    // Finalize the MPI environment.
+
+    time = (MPI_Wtime()-time)/count;
+
+
+
+    if(world_rank == 0){
+        printf("%.20f\n",time*1000000);
+    }
+
+
     MPI_Finalize();
 }
