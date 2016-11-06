@@ -51,37 +51,22 @@ int main(int argc, char** argv) {
             //o n barrier debería aplicarse solo sobrea primeira barrera e as iteracions que se fan para quentar son as de WARMUP
             for (i=0; i<N_WARMUP; i++ ){
                 count =0;
-                byte buffer[nbytes];
+                void* buffer = malloc(sizeof(MPI_BYTE)*nbytes);
 
-                /*This loop has no sense*/
-                /*int j;
-                for(j=0;j < N_BARR;j++)*/
-                    MPI_Barrier(MPI_COMM_WORLD);
+                MPI_Barrier(MPI_COMM_WORLD);
 
                 time = MPI_Wtime();
 
 
-                while (count < n_sample) {
-                    if (world_rank == 0) {
-    //                    printf("ARRANCANDO %d\n",world_rank);
-                        MPI_Send(&buffer, nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
-                        MPI_Recv(&buffer, nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                    } else if(world_rank == 1) {
-    //                    printf("ARRANCANDO %d\n",world_rank);
-                        MPI_Recv(&buffer, nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                        MPI_Send(&buffer, nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
-                    }
-                    count++;
+                for (count = 0;count < n_sample;count++) {
+                    //CODE GOES HERE
+
                 }
 
+                MPI_Barrier(MPI_COMM_WORLD);
 
-                /*This loop has no sense*/
-                //for(j=0;j < N_BARR;j++)
-                    MPI_Barrier(MPI_COMM_WORLD);
-
-                if(world_rank == 0)
-                    time = (MPI_Wtime()-time)/n_sample/2;// entre 2 porque ping pong é especial
-
+                time = (MPI_Wtime()-time)/n_sample;
+                free(buffer);
             }
 
             if(world_rank == 0){
