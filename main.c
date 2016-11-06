@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 
             if(world_rank == 0){
                 //time = (MPI_Wtime()-time)/n_sample;
-                double bandwith=nbytes/time/1024/1024;
+                double bandwith=nbytes/time/1024/1024/world_size;
                 printf("\t%d\t%d\t%.20f\t\t%.20f\n",nbytes,n_sample,time*1000000,bandwith);
             }
 
