@@ -56,15 +56,18 @@ int main(int argc, char** argv) {
 
                 int numberOfFloats = nbytes / sizeof(MPI_FLOAT);
 
-                for(int k = 0; k< numberOfFloats;k++)
+                int k;
+                for( k= 0; k< numberOfFloats;k++)
                     buffer[k] = ((float)rand()/(float)(RAND_MAX/rand()));
 
+                int k =0;
                 MPI_Barrier(MPI_COMM_WORLD);
 
                 time = MPI_Wtime();
 
+
                 for (count=0;count < n_sample;count++)
-                    for(int i=0; i < world_size; i++) //podríanse facer todos xuntos pero non quero saturar a rede realizando todas a vez
+                    for(k=0; i < world_size; i++) //podríanse facer todos xuntos pero non quero saturar a rede realizando todas a vez
                         MPI_Reduce(buffer,recv,numberOfFloats,MPI_FLOAT,MPI_SUM,i,MPI_COMM_WORLD);
 
                 MPI_Barrier(MPI_COMM_WORLD);
