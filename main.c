@@ -59,9 +59,9 @@ int main(int argc, char** argv) {
 
                 time = MPI_Wtime();
 
-
+                int k = 0;
                 for (count = 0;count < n_sample;count++)
-                    for(int i = 0; i<world_size;i++)
+                    for(k = 0; i<world_size;i++)
                         MPI_Scatter(sendBuffer,reparto,MPI_BYTE,
                                     recvBuffer,reparto,MPI_BYTE,i,MPI_COMM_WORLD);
 
@@ -87,4 +87,3 @@ int main(int argc, char** argv) {
     // Finalize the MPI environment.
     MPI_Finalize();
 }
-
