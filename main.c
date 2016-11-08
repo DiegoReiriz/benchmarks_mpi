@@ -34,12 +34,14 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
     double time = MPI_Wtime();
+    double min_time_global;
+    double max_time_global;
 
     if(world_size > 1){
         int nbytes = 0;
 
         if(world_rank == 0)
-            printf("\t#bytes\t#repetitions\tt[usec]\t\tMBytes/sec\n");
+            printf("\t#bytes\t#repetitions\tt_min[usec]\t\tt_max[usec]\t\tt[usec]\t\tMBytes/sec\n");
 
         while(nbytes <= OVERALL_VOL){
 
@@ -67,12 +69,19 @@ int main(int argc, char** argv) {
 
 
                 for (count=0;count < n_sample;count++)
-                    for(k=0; i < world_size; i++) //podríanse facer todos xuntos pero non quero saturar a rede realizando todas a vez
+                    for(k=0; i < world_size; k++) //podríanse facer todos xuntos pero non quero saturar a rede realizando todas a vez
                         MPI_Reduce(buffer,recv,numberOfFloats,MPI_FLOAT,MPI_SUM,i,MPI_COMM_WORLD);
 
                 MPI_Barrier(MPI_COMM_WORLD);
 
                 time = (MPI_Wtime()-time)/n_sample/world_size;
+
+                MPI_Reduce(&time, &min_time_global, 1, MPI_DOUBLE, MPI_MIN, 0,
+                           MPI_COMM_WORLD);
+
+                MPI_Reduce(&time, &max_time_global, 1, MPI_DOUBLE, MPI_MAX, 0,
+                           MPI_COMM_WORLD);
+
                 free(buffer);
                 free(recv);
             }
@@ -80,7 +89,7 @@ int main(int argc, char** argv) {
             if(world_rank == 0){
                 //time = (MPI_Wtime()-time)/n_sample;
                 double bandwith=nbytes/time/1024/1024;
-                printf("\t%d\t%d\t%.20f\t\t%.20f\n",nbytes,n_sample,time*1000000,bandwith);
+                printf("\t%d\t%d\t%.20f\t\t%.20f\t\t%.20f\t\t%.20f\n",nbytes,n_sample,min_time_global*1000000,max_time_global*1000000,time*1000000,bandwith);
             }
 
             nbytes = nbytes == 0 ? 1 : nbytes * 2 ;
