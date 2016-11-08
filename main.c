@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
                 for( k= 0; k< numberOfFloats;k++)
                     buffer[k] = ((float)rand()/(float)(RAND_MAX/rand()));
 
-                int k =0;
+                k =0;
                 MPI_Barrier(MPI_COMM_WORLD);
 
                 time = MPI_Wtime();
