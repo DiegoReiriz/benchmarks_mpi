@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
 
 
                 for (count=0;count < n_sample;count++)
-                    for(k=0; i < world_size; k++) //podríanse facer todos xuntos pero non quero saturar a rede realizando todas a vez
+                    for(k=0; k < world_size; k++) //podríanse facer todos xuntos pero non quero saturar a rede realizando todas a vez
                         MPI_Reduce(buffer,recv,numberOfFloats,MPI_FLOAT,MPI_SUM,i,MPI_COMM_WORLD);
 
                 MPI_Barrier(MPI_COMM_WORLD);
