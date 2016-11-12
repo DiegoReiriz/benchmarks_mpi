@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
                 for (count = 0;count < n_sample;count++)
                     for(k = 0; k<world_size;k++)
                         MPI_Scatter(sendBuffer,nbytes,MPI_BYTE,
-                                    recvBuffer,nbytes,MPI_BYTE,i,MPI_COMM_WORLD);
+                                    recvBuffer,nbytes,MPI_BYTE,k,MPI_COMM_WORLD);
 
                 MPI_Barrier(MPI_COMM_WORLD);
 
