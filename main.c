@@ -71,8 +71,6 @@ int main(int argc, char** argv) {
                     for(k=0; k < world_size; k++) //podríanse facer todos xuntos pero non quero saturar a rede realizando todas a vez
                         MPI_Reduce(buffer,recv,numberOfFloats,MPI_FLOAT,MPI_SUM,k,MPI_COMM_WORLD);
 
-                MPI_Barrier(MPI_COMM_WORLD);
-
                 time = (MPI_Wtime()-time)/n_sample/world_size;
 
                 MPI_Reduce(&time, &min_time_global, 1, MPI_DOUBLE, MPI_MIN, 0,
