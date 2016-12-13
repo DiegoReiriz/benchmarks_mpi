@@ -66,9 +66,7 @@ int main(int argc, char** argv) {
                         MPI_Gather(sendBuffer,nbytes,MPI_BYTE,
                                    recvBuffer,nbytes,MPI_BYTE,k,MPI_COMM_WORLD);
 
-                MPI_Barrier(MPI_COMM_WORLD);
-
-                time = (MPI_Wtime()-time)/n_sample;
+                time = (MPI_Wtime()-time)/n_sample/k;
 
                 MPI_Reduce(&time, &min_time_global, 1, MPI_DOUBLE, MPI_MIN, 0,
                            MPI_COMM_WORLD);
