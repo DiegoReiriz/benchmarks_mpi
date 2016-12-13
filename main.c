@@ -81,6 +81,7 @@ int main(int argc, char** argv) {
             }
 
             if(world_rank == 0){
+                time_global/=world_size;
                 printf("\t%d\t%d\t%.20f\t\t%.20f\t\t%.20f\n",nbytes,n_sample,min_time_global*1000000,max_time_global*1000000,time_global*1000000);
             }
 
