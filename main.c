@@ -34,6 +34,7 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
     double time = MPI_Wtime();
+    double time_global;
     double min_time_global;
     double max_time_global;
 
@@ -41,7 +42,7 @@ int main(int argc, char** argv) {
         int nbytes = 0;
 
         if(world_rank == 0)
-            printf("\t#bytes\t#repetitions\tt_min[usec]\t\tt_max[usec]\t\tt[usec]\t\tMBytes/sec\n");
+            printf("\t#bytes\t#repetitions\tt_min[usec]\t\tt_max[usec]\t\tt[usec]\n");
 
         while(nbytes <= OVERALL_VOL){
 
@@ -68,6 +69,9 @@ int main(int argc, char** argv) {
 
                 time = (MPI_Wtime()-time)/n_sample/k;
 
+                MPI_Reduce(&time, &time_global, 1, MPI_DOUBLE, MPI_SUM, 0,
+                           MPI_COMM_WORLD);
+
                 MPI_Reduce(&time, &min_time_global, 1, MPI_DOUBLE, MPI_MIN, 0,
                            MPI_COMM_WORLD);
 
@@ -79,9 +83,7 @@ int main(int argc, char** argv) {
             }
 
             if(world_rank == 0){
-                //time = (MPI_Wtime()-time)/n_sample;
-                double bandwith=nbytes/time/1024/1024/world_size;
-                printf("\t%d\t%d\t%.20f\t\t%.20f\t\t%.20f\tg\t%.20f\n",nbytes,n_sample,min_time_global*1000000,max_time_global*1000000,time*1000000,bandwith);
+                printf("\t%d\t%d\t%.20f\t\t%.20f\t\t%.20f\n",nbytes,n_sample,min_time_global*1000000,max_time_global*1000000,time_global*1000000);
             }
 
             nbytes = nbytes == 0 ? 1 : nbytes * 2 ;
