@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
             //o n barrier debería aplicarse solo sobrea primeira barrera e as iteracions que se fan para quentar son as de WARMUP
             for (i=0; i<N_WARMUP; i++ ){
                 count =0;
-                void* sendBuffer = malloc(sizeof(MPI_BYTE) * nbytes);
+                void* sendBuffer = malloc(sizeof(MPI_BYTE) * nbytes * world_size);
                 void* recvBuffer = malloc(sizeof(MPI_BYTE) * nbytes * world_size);
 
                 MPI_Barrier(MPI_COMM_WORLD);
